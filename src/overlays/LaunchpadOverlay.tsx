@@ -3,15 +3,7 @@ import type { ReactNode } from "react";
 import { useUI } from "../state/uiStore";
 import { runCommand } from "../system/commands";
 import { setURLForLaunchpad } from "../system/urlSync";
-
-const PROFILE = {
-  email: "danielslee078@gmail.com",
-  githubUrl: "https://www.github.com/e-dvni",
-  linkedinUrl: "https://www.linkedin.com/in/daniel-lee-7157a31a8/",
-  // Update these when ready:
-  ledBuilderUrl: "https://example.com",
-  portfolioRepoUrl: "https://www.github.com/e-dvni",
-};
+import { PROFILE } from "../config/profile";
 
 type Slide = {
   slug: string;
@@ -103,10 +95,9 @@ export default function LaunchpadOverlay() {
           const el = containerRef.current;
           if (!el) return;
 
-          // Use deltaX when it’s a trackpad horizontal swipe; otherwise use deltaY for mouse wheels.
+          // Trackpads usually emit deltaX already; mouse wheels emit deltaY
           const dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
 
-          // Prevent page from “fighting” vertical scroll
           e.preventDefault();
           el.scrollLeft += dx;
         }}
@@ -193,6 +184,7 @@ function ProjectsSlide() {
       <div style={{ color: "var(--muted)", lineHeight: 1.6 }}>
         Live Shopify-based custom text builder with fonts, live preview, dynamic sizing, and pricing logic.
       </div>
+
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <button style={btnStyle} onClick={() => window.open(PROFILE.ledBuilderUrl, "_blank", "noopener,noreferrer")}>
           View Live Site
@@ -208,6 +200,7 @@ function ProjectsSlide() {
       <div style={{ color: "var(--muted)", lineHeight: 1.6 }}>
         macOS-style portfolio experience with Launchpad, Spotlight, and Terminal navigation.
       </div>
+
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <button style={btnStyle} onClick={() => window.open(PROFILE.portfolioRepoUrl, "_blank", "noopener,noreferrer")}>
           View Repo

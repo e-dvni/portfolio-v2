@@ -2,12 +2,7 @@ import { useState } from "react";
 import type { DockApp } from "../system/appRegistry";
 import { useUI } from "../state/uiStore";
 import { runCommand } from "../system/commands";
-
-const PROFILE = {
-  email: "danielslee078@gmail.com",
-  githubUrl: "https://www.github.com/e-dvni",
-  linkedinUrl: "https://www.linkedin.com/in/daniel-lee-7157a31a8/",
-};
+import { PROFILE } from "../config/profile";
 
 export default function DockAppIcon({ app }: { app: DockApp }) {
   const running = useUI((s) => s.running[app.key]);
@@ -26,33 +21,38 @@ export default function DockAppIcon({ app }: { app: DockApp }) {
   };
 
   const onClick = () => {
+    // Launchpad toggle
     if (app.key === "launchpad") {
       if (useUI.getState().launchpadOpen) runCommand({ type: "CLOSE_LAUNCHPAD" });
       else runCommand({ type: "OPEN_LAUNCHPAD", slug: useUI.getState().launchpadSlug });
       return;
     }
 
+    // External apps
     if (app.kind === "external") {
       if (app.key === "mail") {
         openGmailCompose();
         return;
       }
 
-      // Safety: if these are missing in registry for any reason, fall back to profile constants
+      // For safety, prefer registry href when present, otherwise fall back to config
       if (app.key === "github") {
         runCommand({ type: "OPEN_EXTERNAL", url: app.href || PROFILE.githubUrl });
         return;
       }
+
       if (app.key === "linkedin") {
         runCommand({ type: "OPEN_EXTERNAL", url: app.href || PROFILE.linkedinUrl });
         return;
       }
 
-      if (app.href) runCommand({ type: "OPEN_EXTERNAL", url: app.href });
+      if (app.href) {
+        runCommand({ type: "OPEN_EXTERNAL", url: app.href });
+      }
       return;
     }
 
-    // window apps (Notes/Admin) later
+    // Window apps (Notes/Admin) later phases
     alert(`${app.name} (Phase 2/3)`);
   };
 
