@@ -6,6 +6,8 @@ export type Command =
   | { type: "CLOSE_LAUNCHPAD" }
   | { type: "OPEN_TERMINAL" }
   | { type: "CLOSE_TERMINAL" }
+  | { type: "OPEN_NOTES" }
+  | { type: "CLOSE_NOTES" }
   | { type: "TOGGLE_THEME" }
   | { type: "OPEN_EXTERNAL"; url: string }
   | { type: "OPEN_SPOTLIGHT" }
@@ -25,6 +27,7 @@ export function runCommand(cmd: Command) {
       closeSpotlightIfOpen();
       return;
     }
+
     case "CLOSE_LAUNCHPAD": {
       ui.closeLaunchpad();
       clearURLToRoot();
@@ -36,8 +39,20 @@ export function runCommand(cmd: Command) {
       closeSpotlightIfOpen();
       return;
     }
+
     case "CLOSE_TERMINAL": {
       ui.closeTerminal();
+      return;
+    }
+
+    case "OPEN_NOTES": {
+      ui.openNotes();
+      closeSpotlightIfOpen(); // ✅ you were missing this
+      return;
+    }
+
+    case "CLOSE_NOTES": {
+      ui.closeNotes();
       return;
     }
 
@@ -57,6 +72,7 @@ export function runCommand(cmd: Command) {
       ui.openSpotlight();
       return;
     }
+
     case "CLOSE_SPOTLIGHT": {
       ui.closeSpotlight();
       return;

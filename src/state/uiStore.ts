@@ -1,8 +1,7 @@
 import { create } from "zustand";
 
 export type ThemeMode = "light" | "dark";
-
-type WindowKey = "terminal" | "notes" | "admin";
+export type WindowKey = "terminal" | "notes" | "admin";
 
 type WindowPos = { x: number; y: number };
 
@@ -17,8 +16,13 @@ type UIState = {
   // Spotlight
   spotlightOpen: boolean;
 
-  // Terminal
+  // Windows
   terminalOpen: boolean;
+  notesOpen: boolean;
+
+  // Single source of truth for focus
+  activeWindow: WindowKey | null;
+  clearActiveWindow: () => void;
 
   // Dock running indicators
   running: Record<string, boolean>;
@@ -26,7 +30,7 @@ type UIState = {
   // Admin
   isAdmin: boolean;
 
-  // --- Window System (for draggable windows only)
+  // Window system
   windowPos: Partial<Record<WindowKey, WindowPos>>;
   windowZ: Partial<Record<WindowKey, number>>;
   topZ: number;
@@ -51,13 +55,17 @@ type UIState = {
   closeTerminal: () => void;
   toggleTerminal: () => void;
 
+  openNotes: () => void;
+  closeNotes: () => void;
+  toggleNotes: () => void;
+
+  closeFocusedWindow: () => void;
+
   setRunning: (key: string, on: boolean) => void;
 };
 
 const THEME_KEY = "edvni.theme";
 const LAST_SLUG_KEY = "edvni.lastSlug";
-
-// optional persistence for window positions
 const WIN_POS_KEY = "edvni.windowPos";
 
 const getStoredTheme = (): ThemeMode => {
@@ -96,7 +104,12 @@ export const useUI = create<UIState>((set, get) => ({
   launchpadSlug: typeof window !== "undefined" ? getStoredSlug() : "about",
 
   spotlightOpen: false,
+
   terminalOpen: false,
+  notesOpen: false,
+
+  activeWindow: null,
+  clearActiveWindow: () => set({ activeWindow: null }),
 
   running: {
     launchpad: false,
@@ -106,7 +119,6 @@ export const useUI = create<UIState>((set, get) => ({
     spotlight: false,
   },
 
-  // window system defaults
   windowPos: typeof window !== "undefined" ? readWindowPos() : {},
   windowZ: { terminal: 10, notes: 11, admin: 12 },
   topZ: 20,
@@ -116,6 +128,7 @@ export const useUI = create<UIState>((set, get) => ({
       const nextTop = s.topZ + 1;
       return {
         topZ: nextTop,
+        activeWindow: key,
         windowZ: { ...s.windowZ, [key]: nextTop },
       };
     }),
@@ -156,6 +169,7 @@ export const useUI = create<UIState>((set, get) => ({
       running: { ...s.running, launchpad: true },
     }));
   },
+
   closeLaunchpad: () =>
     set((s) => ({
       launchpadOpen: false,
@@ -167,24 +181,70 @@ export const useUI = create<UIState>((set, get) => ({
       spotlightOpen: true,
       running: { ...s.running, spotlight: true },
     })),
+
   closeSpotlight: () =>
     set((s) => ({
       spotlightOpen: false,
       running: { ...s.running, spotlight: false },
     })),
+
   toggleSpotlight: () => (get().spotlightOpen ? get().closeSpotlight() : get().openSpotlight()),
 
+  // Atomic open + focus + z-index
   openTerminal: () =>
-    set((s) => ({
-      terminalOpen: true,
-      running: { ...s.running, terminal: true },
-    })),
+    set((s) => {
+      const nextTop = s.topZ + 1;
+      return {
+        terminalOpen: true,
+        running: { ...s.running, terminal: true },
+        topZ: nextTop,
+        activeWindow: "terminal",
+        windowZ: { ...s.windowZ, terminal: nextTop },
+      };
+    }),
+
   closeTerminal: () =>
     set((s) => ({
       terminalOpen: false,
+      activeWindow: s.activeWindow === "terminal" ? null : s.activeWindow,
       running: { ...s.running, terminal: false },
     })),
+
   toggleTerminal: () => (get().terminalOpen ? get().closeTerminal() : get().openTerminal()),
+
+  // Atomic open + focus + z-index
+  openNotes: () =>
+    set((s) => {
+      const nextTop = s.topZ + 1;
+      return {
+        notesOpen: true,
+        running: { ...s.running, notes: true },
+        topZ: nextTop,
+        activeWindow: "notes",
+        windowZ: { ...s.windowZ, notes: nextTop },
+      };
+    }),
+
+  closeNotes: () =>
+    set((s) => ({
+      notesOpen: false,
+      activeWindow: s.activeWindow === "notes" ? null : s.activeWindow,
+      running: { ...s.running, notes: false },
+    })),
+
+  toggleNotes: () => (get().notesOpen ? get().closeNotes() : get().openNotes()),
+
+  closeFocusedWindow: () => {
+    const ui = get();
+    const key = ui.activeWindow;
+    if (!key) return;
+
+    if (key === "terminal") ui.closeTerminal();
+    if (key === "notes") ui.closeNotes();
+    if (key === "admin") {
+      // later: closeAdmin()
+    }
+  },
 
   setRunning: (key, on) => set((s) => ({ running: { ...s.running, [key]: on } })),
 }));

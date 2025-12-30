@@ -1,6 +1,22 @@
+import { useUI } from "../state/uiStore";
+
+function clickedInsideProtectedUI(target: EventTarget | null) {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+
+  // Any window root OR dock/menubar (or anything else you mark protected)
+  return Boolean(el.closest("[data-window='true'], [data-no-blur='true']"));
+}
+
 export default function DesktopSurface() {
+  const clearActiveWindow = useUI((s) => s.clearActiveWindow);
+
   return (
     <div
+      onMouseDown={(e) => {
+        // Only unfocus if click is truly on the wallpaper
+        if (!clickedInsideProtectedUI(e.target)) clearActiveWindow();
+      }}
       style={{
         position: "absolute",
         inset: 0,

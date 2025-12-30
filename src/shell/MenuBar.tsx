@@ -7,16 +7,16 @@ const MENU_ITEMS = [
   { label: "Education", slug: "education" },
   { label: "Projects", slug: "projects" },
   { label: "Contact", slug: "contact" },
-  { label: "Resume", slug: "resume" }, // placeholder slide for later if desired
+  { label: "Resume", slug: "resume" },
 ];
 
 export default function MenuBar() {
   const [open, setOpen] = useState(false);
-
   const items = useMemo(() => MENU_ITEMS, []);
 
   return (
     <div
+      data-no-blur="true"
       style={{
         position: "absolute",
         top: 0,
@@ -102,6 +102,7 @@ export default function MenuBar() {
             >
               GitHub
             </button>
+
             <button
               onClick={() => {
                 setOpen(false);

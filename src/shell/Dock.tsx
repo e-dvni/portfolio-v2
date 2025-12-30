@@ -4,6 +4,7 @@ import { DOCK_APPS } from "../system/appRegistry";
 export default function Dock() {
   return (
     <div
+      data-no-blur="true"
       style={{
         position: "absolute",
         left: "50%",

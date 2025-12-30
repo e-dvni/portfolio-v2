@@ -1,7 +1,9 @@
+// src/overlays/TerminalOverlay.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { runCommand } from "../system/commands";
 import { PROFILE } from "../config/profile";
 import DraggableWindow from "../components/DraggableWindow";
+import { useUI } from "../state/uiStore";
 
 type Line = { kind: "system" | "user" | "out"; text: string };
 
@@ -34,10 +36,12 @@ export default function TerminalOverlay() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
+  const focusWindow = useUI((s) => s.focusWindow);
+
   const [value, setValue] = useState("");
   const [history, setHistory] = useState<string[]>([]);
-  const [cursor, setCursor] = useState<number>(-1); // -1 means "new line"
-  const [draft, setDraft] = useState<string>(""); // preserves current typing when cycling history
+  const [cursor, setCursor] = useState<number>(-1); // -1 = new line
+  const [draft, setDraft] = useState<string>("");
 
   const [lines, setLines] = useState<Line[]>(() => [
     { kind: "system", text: "edvni@portfolio ~ % Hello, my name is Daniel Lee — ask me anything :) (commands: help)" },
@@ -46,8 +50,10 @@ export default function TerminalOverlay() {
   const prompt = useMemo(() => "edvni@portfolio ~ % ", []);
 
   useEffect(() => {
+    // Bring to front and focus input when opened
+    focusWindow("terminal");
     inputRef.current?.focus();
-  }, []);
+  }, [focusWindow]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -92,11 +98,13 @@ export default function TerminalOverlay() {
       print("Opening GitHub…");
       return;
     }
+
     if (q === "linkedin" || q === "open linkedin") {
       runCommand({ type: "OPEN_EXTERNAL", url: PROFILE.linkedinUrl });
       print("Opening LinkedIn…");
       return;
     }
+
     if (q === "email" || q === "mail" || q === "gmail" || q === "open email") {
       openGmailCompose();
       print("Opening Gmail compose…");
@@ -152,10 +160,7 @@ export default function TerminalOverlay() {
       e.preventDefault();
       setCursor((c) => {
         if (history.length === 0) return c;
-
-        // entering history mode: store draft
         if (c === -1) setDraft(value);
-
         const next = Math.min(c + 1, history.length - 1);
         setValue(history[next] ?? "");
         return next;
@@ -168,10 +173,8 @@ export default function TerminalOverlay() {
       setCursor((c) => {
         if (history.length === 0) return c;
         const next = Math.max(c - 1, -1);
-
         if (next === -1) setValue(draft);
         else setValue(history[next] ?? "");
-
         return next;
       });
       return;
@@ -179,147 +182,138 @@ export default function TerminalOverlay() {
   };
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 75,
-        background: "rgba(0,0,0,0.30)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
-        animation: "fadeIn 120ms ease-out",
-      }}
-      onMouseDown={() => inputRef.current?.focus()}
-    >
-      <DraggableWindow
-        windowKey="terminal"
-        defaultSize={{ width: 980, height: 640 }}
-        titleBar={({ onPointerDown }) => (
-          <div
-            onPointerDown={onPointerDown}
-            style={{
-              padding: "10px 12px",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              borderBottom: "1px solid rgba(255,255,255,0.10)",
-              background: "rgba(0,0,0,0.25)",
-              borderTopLeftRadius: 18,
-              borderTopRightRadius: 18,
-              cursor: "grab",
-              userSelect: "none",
-            }}
-          >
-            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              <button
-                onClick={close}
-                title="Close"
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 999,
-                  border: "none",
-                  background: "rgba(255,95,86,0.92)",
-                  cursor: "pointer",
-                  padding: 0,
-                }}
-              />
-              <div style={{ width: 10, height: 10, borderRadius: 999, background: "rgba(255,189,46,0.9)" }} />
-              <div style={{ width: 10, height: 10, borderRadius: 999, background: "rgba(39,201,63,0.9)" }} />
-            </div>
-
-            <div style={{ marginLeft: 6, color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: 650 }}>
-              Terminal
-            </div>
-
-            <div style={{ marginLeft: "auto", color: "rgba(255,255,255,0.45)", fontSize: 12 }}>
-              Drag title bar • Esc to close • type “help”
-            </div>
-          </div>
-        )}
-      >
+    <DraggableWindow
+      windowKey="terminal"
+      defaultSize={{ width: 980, height: 640 }}
+      titleBar={({ onPointerDown }) => (
         <div
+          onPointerDown={onPointerDown}
+          onMouseDown={() => inputRef.current?.focus()}
           style={{
-            height: "calc(640px - 44px)",
-            borderRadius: 18,
-            border: "1px solid rgba(255,255,255,0.12)",
-            background: "rgba(10,12,18,0.88)",
-            boxShadow: "0 30px 120px rgba(0,0,0,0.60)",
-            overflow: "hidden",
-            display: "grid",
-            gridTemplateRows: "1fr auto",
+            padding: "10px 12px",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            borderBottom: "1px solid var(--border)",
+            background: "var(--panelSolid)",
+            borderTopLeftRadius: 18,
+            borderTopRightRadius: 18,
+            cursor: "grab",
+            userSelect: "none",
           }}
         >
-          <div
-            ref={scrollRef}
-            style={{
-              padding: 14,
-              overflow: "auto",
-              fontFamily:
-                "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-              fontSize: 13,
-              lineHeight: 1.6,
-              color: "rgba(255,255,255,0.86)",
-            }}
-          >
-            {lines.map((l, i) => (
-              <div
-                key={i}
-                style={{
-                  color:
-                    l.kind === "system"
-                      ? "rgba(170,220,255,0.90)"
-                      : l.kind === "user"
-                      ? "rgba(255,255,255,0.92)"
-                      : "rgba(255,255,255,0.78)",
-                  whiteSpace: "pre-wrap",
-                }}
-              >
-                {l.text}
-              </div>
-            ))}
-          </div>
-
-          <div
-            style={{
-              borderTop: "1px solid rgba(255,255,255,0.10)",
-              padding: "10px 12px",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              background: "rgba(0,0,0,0.22)",
-              fontFamily:
-                "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-              fontSize: 13,
-              color: "rgba(255,255,255,0.88)",
-            }}
-          >
-            <div style={{ color: "rgba(255,255,255,0.75)" }}>{prompt}</div>
-            <input
-              ref={inputRef}
-              value={value}
-              onChange={(e) => {
-                setValue(e.target.value);
-                if (cursor === -1) setDraft(e.target.value);
-              }}
-              onKeyDown={onKeyDown}
-              spellCheck={false}
-              autoCapitalize="none"
-              autoComplete="off"
-              autoCorrect="off"
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <button
+              onClick={close}
+              title="Close"
               style={{
-                flex: 1,
-                background: "transparent",
+                width: 10,
+                height: 10,
+                borderRadius: 999,
                 border: "none",
-                outline: "none",
-                color: "rgba(255,255,255,0.92)",
-                fontFamily: "inherit",
-                fontSize: "inherit",
+                background: "rgba(255,95,86,0.92)",
+                cursor: "pointer",
+                padding: 0,
               }}
             />
+            <div style={{ width: 10, height: 10, borderRadius: 999, background: "rgba(255,189,46,0.9)" }} />
+            <div style={{ width: 10, height: 10, borderRadius: 999, background: "rgba(39,201,63,0.9)" }} />
+          </div>
+
+          <div style={{ marginLeft: 6, color: "var(--fg)", fontSize: 13, fontWeight: 650 }}>Terminal</div>
+
+          <div style={{ marginLeft: "auto", color: "var(--muted)", fontSize: 12 }}>
+            Drag title bar • Esc to close • type “help”
           </div>
         </div>
-      </DraggableWindow>
-    </div>
+      )}
+    >
+      <div
+        style={{
+          height: "calc(640px - 44px)",
+          borderBottomLeftRadius: 18,
+          borderBottomRightRadius: 18,
+          border: "1px solid var(--border)",
+          borderTop: "none",
+          background: "var(--panelSolid)",
+          boxShadow: "var(--shadow)",
+          overflow: "hidden",
+          display: "grid",
+          gridTemplateRows: "1fr auto",
+        }}
+        onMouseDown={() => inputRef.current?.focus()}
+      >
+        <div
+          ref={scrollRef}
+          style={{
+            padding: 14,
+            overflow: "auto",
+            fontFamily:
+              "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+            fontSize: 13,
+            lineHeight: 1.6,
+            color: "var(--fg)",
+          }}
+        >
+          {lines.map((l, i) => (
+            <div
+              key={i}
+              style={{
+                color:
+                  l.kind === "system"
+                    ? "rgba(154,208,255,0.95)"
+                    : l.kind === "user"
+                    ? "var(--fg)"
+                    : "rgba(233,237,245,0.85)",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {l.text}
+            </div>
+          ))}
+        </div>
+
+        <div
+          style={{
+            borderTop: "1px solid var(--border)",
+            padding: "10px 12px",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            background: "var(--panel)",
+            fontFamily:
+              "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+            fontSize: 13,
+            color: "var(--fg)",
+          }}
+        >
+          <div style={{ color: "var(--muted)" }}>{prompt}</div>
+          <input
+            ref={inputRef}
+            value={value}
+            onChange={(e) => {
+              setValue(e.target.value);
+              if (cursor === -1) setDraft(e.target.value);
+            }}
+            onKeyDown={onKeyDown}
+            spellCheck={false}
+            autoCapitalize="none"
+            autoComplete="off"
+            autoCorrect="off"
+            style={{
+              flex: 1,
+              background: "var(--panel)",
+              border: "none",
+              outline: "none",
+              color: "var(--fg)",
+              fontFamily: "inherit",
+              fontSize: "inherit",
+              padding: "6px 8px",
+              borderRadius: 10,
+            }}
+          />
+        </div>
+      </div>
+    </DraggableWindow>
   );
 }

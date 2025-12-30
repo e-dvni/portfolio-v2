@@ -9,7 +9,7 @@ export type DockApp = {
 
 export const DOCK_APPS: DockApp[] = [
   { key: "launchpad", name: "Launchpad", kind: "overlay" },
-  { key: "terminal", name: "Terminal", kind: "overlay" },
+  { key: "terminal", name: "Terminal", kind: "window" },
   { key: "notes", name: "Notes", kind: "window" },
   { key: "github", name: "GitHub", kind: "external", href: "https://github.com/e-dvni/" },
   { key: "linkedin", name: "LinkedIn", kind: "external", href: "https://www.linkedin.com/in/daniel-lee-7157a31a8/" },

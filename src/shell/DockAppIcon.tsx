@@ -35,6 +35,13 @@ export default function DockAppIcon({ app }: { app: DockApp }) {
       return;
     }
 
+    // Notes toggle ✅
+    if (app.key === "notes") {
+      if (useUI.getState().notesOpen) runCommand({ type: "CLOSE_NOTES" });
+      else runCommand({ type: "OPEN_NOTES" });
+      return;
+    }
+
     // External apps
     if (app.kind === "external") {
       if (app.key === "mail") {
@@ -56,7 +63,11 @@ export default function DockAppIcon({ app }: { app: DockApp }) {
       return;
     }
 
-    alert(`${app.name} (Phase 2/3)`);
+    // Admin window later phases
+    if (app.key === "admin") {
+      alert(`${app.name} (Phase 2/3)`);
+      return;
+    }
   };
 
   return (
