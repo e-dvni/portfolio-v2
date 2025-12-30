@@ -2,8 +2,6 @@ import { useEffect } from "react";
 import { useUI } from "../state/uiStore";
 import DesktopShell from "../shell/DesktopShell";
 import { bindGlobalShortcuts } from "../system/shortcuts";
-import { readLaunchpadSlugFromURL } from "../system/urlSync";
-import { runCommand } from "../system/commands";
 
 function LoginScreen({ onLogin }: { onLogin: () => void }) {
   useEffect(() => {
@@ -41,14 +39,11 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
           }}
           title="Edvni"
         >
-          {/* TODO: replace with your logo image */}
           e
         </div>
 
         <div style={{ fontSize: 18, letterSpacing: 0.2, marginBottom: 10 }}>edvni</div>
-        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>
-          Click anywhere or press any key
-        </div>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>Click anywhere or press any key</div>
       </div>
     </div>
   );
@@ -63,13 +58,10 @@ export default function AppRoot() {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
-  useEffect(() => bindGlobalShortcuts(), []);
-
   useEffect(() => {
-    // If user landed on /lp/:slug, open launchpad after login
-    const slug = readLaunchpadSlugFromURL();
-    if (slug && isLoggedIn) runCommand({ type: "OPEN_LAUNCHPAD", slug });
-  }, [isLoggedIn]);
+    const unbind = bindGlobalShortcuts();
+    return () => unbind();
+  }, []);
 
   if (!isLoggedIn) return <LoginScreen onLogin={login} />;
   return <DesktopShell />;

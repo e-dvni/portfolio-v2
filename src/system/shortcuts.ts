@@ -3,14 +3,14 @@ import { useUI } from "../state/uiStore";
 
 export function bindGlobalShortcuts() {
   const handler = (e: KeyboardEvent) => {
-    // Cmd+K spotlight
+    // Cmd+K / Ctrl+K => Spotlight
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
       e.preventDefault();
       useUI.getState().toggleSpotlight();
       return;
     }
 
-    // Esc closes launchpad first, then spotlight
+    // Esc closes Launchpad first, then Spotlight
     if (e.key === "Escape") {
       const ui = useUI.getState();
       if (ui.launchpadOpen) return runCommand({ type: "CLOSE_LAUNCHPAD" });

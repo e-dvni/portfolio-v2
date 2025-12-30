@@ -1,9 +1,11 @@
 import { useUI } from "../state/uiStore";
-import { clearURLToRoot, setURLForLaunchpad } from "./urlSync";
+import { clearURLToRoot, setURLForLaunchpadOpen } from "./urlSync";
 
 export type Command =
   | { type: "OPEN_LAUNCHPAD"; slug?: string }
   | { type: "CLOSE_LAUNCHPAD" }
+  | { type: "OPEN_TERMINAL" }
+  | { type: "CLOSE_TERMINAL" }
   | { type: "TOGGLE_THEME" }
   | { type: "OPEN_EXTERNAL"; url: string }
   | { type: "OPEN_SPOTLIGHT" }
@@ -12,10 +14,15 @@ export type Command =
 export function runCommand(cmd: Command) {
   const ui = useUI.getState();
 
+  const closeSpotlightIfOpen = () => {
+    if (useUI.getState().spotlightOpen) useUI.getState().closeSpotlight();
+  };
+
   switch (cmd.type) {
     case "OPEN_LAUNCHPAD": {
       ui.openLaunchpad(cmd.slug);
-      setURLForLaunchpad(cmd.slug || ui.launchpadSlug);
+      setURLForLaunchpadOpen();
+      closeSpotlightIfOpen();
       return;
     }
     case "CLOSE_LAUNCHPAD": {
@@ -23,14 +30,29 @@ export function runCommand(cmd: Command) {
       clearURLToRoot();
       return;
     }
+
+    case "OPEN_TERMINAL": {
+      ui.openTerminal();
+      closeSpotlightIfOpen();
+      return;
+    }
+    case "CLOSE_TERMINAL": {
+      ui.closeTerminal();
+      return;
+    }
+
     case "TOGGLE_THEME": {
       ui.toggleTheme();
+      closeSpotlightIfOpen();
       return;
     }
+
     case "OPEN_EXTERNAL": {
       window.open(cmd.url, "_blank", "noopener,noreferrer");
+      closeSpotlightIfOpen();
       return;
     }
+
     case "OPEN_SPOTLIGHT": {
       ui.openSpotlight();
       return;

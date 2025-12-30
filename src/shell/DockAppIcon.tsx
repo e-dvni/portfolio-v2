@@ -24,7 +24,14 @@ export default function DockAppIcon({ app }: { app: DockApp }) {
     // Launchpad toggle
     if (app.key === "launchpad") {
       if (useUI.getState().launchpadOpen) runCommand({ type: "CLOSE_LAUNCHPAD" });
-      else runCommand({ type: "OPEN_LAUNCHPAD", slug: useUI.getState().launchpadSlug });
+      else runCommand({ type: "OPEN_LAUNCHPAD" }); // opens About by default
+      return;
+    }
+
+    // Terminal toggle
+    if (app.key === "terminal") {
+      if (useUI.getState().terminalOpen) runCommand({ type: "CLOSE_TERMINAL" });
+      else runCommand({ type: "OPEN_TERMINAL" });
       return;
     }
 
@@ -35,7 +42,6 @@ export default function DockAppIcon({ app }: { app: DockApp }) {
         return;
       }
 
-      // For safety, prefer registry href when present, otherwise fall back to config
       if (app.key === "github") {
         runCommand({ type: "OPEN_EXTERNAL", url: app.href || PROFILE.githubUrl });
         return;
@@ -46,13 +52,10 @@ export default function DockAppIcon({ app }: { app: DockApp }) {
         return;
       }
 
-      if (app.href) {
-        runCommand({ type: "OPEN_EXTERNAL", url: app.href });
-      }
+      if (app.href) runCommand({ type: "OPEN_EXTERNAL", url: app.href });
       return;
     }
 
-    // Window apps (Notes/Admin) later phases
     alert(`${app.name} (Phase 2/3)`);
   };
 
@@ -98,19 +101,18 @@ export default function DockAppIcon({ app }: { app: DockApp }) {
       </button>
 
       <div style={{ height: 8, display: "grid", placeItems: "center", marginTop: 3 }}>
-        {running ? (
-          <div style={{ width: 6, height: 6, borderRadius: 999, background: "rgba(255,255,255,0.85)" }} />
-        ) : null}
+        {running ? <div style={{ width: 6, height: 6, borderRadius: 999, background: "rgba(255,255,255,0.85)" }} /> : null}
       </div>
     </div>
   );
 }
 
 function iconFor(key: string) {
-  // simple placeholders; we’ll replace with real icons later
   switch (key) {
     case "launchpad":
       return "⌘";
+    case "terminal":
+      return ">_";
     case "notes":
       return "🗒";
     case "github":
